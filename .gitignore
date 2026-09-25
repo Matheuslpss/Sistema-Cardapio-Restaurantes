@@ -1,2 +1,4 @@
 memoria-privada/
 AGENTS.md
+out/
+*.class
