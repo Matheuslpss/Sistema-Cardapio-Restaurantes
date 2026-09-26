@@ -37,6 +37,11 @@ public class CategoriaService {
         return null;
     }
 
+    public ArrayList<Categoria> getCategorias() {
+
+        return new ArrayList<>(categorias);
+    }
+
 
     public void editarCategoria(String nomeAtual, String novoNome) {
 

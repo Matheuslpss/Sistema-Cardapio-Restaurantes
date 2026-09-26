@@ -37,6 +37,26 @@ public class ProdutoService {
         }
     }
 
+    public void listarProdutosPorCategoria (Categoria categoria){
+        if (categoria == null){
+            return;
+        }
+        for (Produto produto : produtos){
+            
+            if (produto.getCategoria() !=null 
+                    && produto.getCategoria().getNome()
+                        .equalsIgnoreCase(categoria.getNome())){
+
+                System.out.println(
+                    produto.getNome()
+                    + " - R$ " + produto.getPreco()
+                    + " - " + produto.getDescricao()
+            );
+        }
+    }
+}
+
+
 
     public void editarProduto(
             String nomeAtual,

@@ -2,6 +2,7 @@ package src.menu;
 
 import java.util.Scanner;
 
+import src.categoria.Categoria;
 import src.categoria.CategoriaService;
 import src.service.ProdutoService;
 
@@ -13,12 +14,20 @@ public class MenuCliente {
         System.out.println("2 - Voltar");
     }
 
-    public void mostrarCardapio(ProdutoService produtoService) {
+    public void mostrarCardapio(
+            ProdutoService produtoService,
+            CategoriaService categoriaService) {
+
         System.out.println("===== CARDÁPIO =====");
 
-        produtoService.listarProdutos();
-    }
+        for (Categoria categoria : categoriaService.getCategorias()) {
 
+            System.out.println();
+            System.out.println("--- " + categoria.getNome() + " ---");
+
+            produtoService.listarProdutosPorCategoria(categoria);
+        }
+    }
     public void executarMenu(
             Scanner entrada,
             ProdutoService produtoService,
@@ -36,7 +45,10 @@ public class MenuCliente {
 
             if (opcao == 1) {
 
-                mostrarCardapio(produtoService);
+                mostrarCardapio(
+                    produtoService,
+                    categoriaService
+                );
 
             } else if (opcao == 2) {
 
