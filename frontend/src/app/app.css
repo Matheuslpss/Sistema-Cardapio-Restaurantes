@@ -1,0 +1,113 @@
+/* Estrutura geral da pagina */
+.cardapio {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Cabecalho */
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Titulo principal */
+.apresentacao {
+  margin: 32px 0;
+  text-align: center;
+}
+
+/* Botoes das categorias */
+.navegacao-categorias {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  margin-bottom: 32px;
+}
+
+.navegacao-categorias button {
+  flex: 1 0 auto;
+  min-width: 140px;
+}
+
+/* Lista de categorias controlada pelo Angular futuramente */
+.lista-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Grade dos produtos */
+.grade-produtos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* Card individual do produto */
+.card-produto {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+.imagem-produto {
+  min-height: 160px;
+}
+
+.informacoes-produto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}
+
+.informacoes-produto h3,
+.informacoes-produto p {
+  margin: 0;
+}
+
+/* Preco e botao alinhados no final do card */
+.acoes-produto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* Area reservada para o pedido */
+.area-pedido {
+  margin-top: 32px;
+}
+
+/* Ajustes para telas menores */
+@media (max-width: 800px) {
+  .grade-produtos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .cabecalho {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grade-produtos {
+    grid-template-columns: 1fr;
+  }
+}
+/* Categoria atualmente selecionada */
+.botao-categoria.categoria-selecionada {
+  font-weight: 700;
+}

@@ -17,27 +17,42 @@
   </section>
 
   <nav class="navegacao-categorias" aria-label="Categorias do cardápio">
-    <button type="button">Categoria 1</button>
-    <button type="button">Categoria 2</button>
-    <button type="button">Categoria 3</button>
+    <button
+      class="botao-categoria"
+      [class.categoria-selecionada]="selectedCategory === 'Categoria 1'"
+      (click)="selectedCategory = 'Categoria 1'"
+      type="button">
+      Categoria 1
+    </button>
+    <button
+      class="botao-categoria"
+      [class.categoria-selecionada]="selectedCategory === 'Categoria 2'"
+      (click)="selectedCategory = 'Categoria 2'"
+      type="button">
+      Categoria 2
+    </button>
+    <button
+      class="botao-categoria"
+      [class.categoria-selecionada]="selectedCategory === 'Categoria 3'"
+      (click)="selectedCategory = 'Categoria 3'"
+      type="button">
+      Categoria 3
+    </button>
   </nav>
 
   <div class="lista-categorias">
 
-    <section class="secao-categoria">
-      <div class="cabecalho-categoria">
-        <h2>Nome da categoria</h2>
-        <span class="linha-categoria"></span>
-      </div>
-
+    <section class="secao-categoria" [hidden]="selectedCategory !== 'Categoria 1'">
       <div class="grade-produtos">
         <article class="card-produto">
           <div class="imagem-produto">Imagem</div>
           <div class="informacoes-produto">
             <h3>Nome do produto</h3>
             <p>Descrição do produto.</p>
-            <strong>Preço</strong>
-            <button class="botao-adicionar" type="button">Adicionar</button>
+            <div class="acoes-produto">
+              <strong>Preço</strong>
+              <button class="botao-adicionar" type="button">Adicionar</button>
+            </div>
           </div>
         </article>
 
@@ -46,32 +61,34 @@
           <div class="informacoes-produto">
             <h3>Nome do produto</h3>
             <p>Descrição do produto.</p>
-            <strong>Preço</strong>
-            <button class="botao-adicionar" type="button">Adicionar</button>
+            <div class="acoes-produto">
+              <strong>Preço</strong>
+              <button class="botao-adicionar" type="button">Adicionar</button>
+            </div>
           </div>
         </article>
       </div>
     </section>
 
-    <section class="secao-categoria">
-      <div class="cabecalho-categoria">
-        <h2>Outra categoria</h2>
-        <span class="linha-categoria"></span>
-      </div>
-
+    <section class="secao-categoria" [hidden]="selectedCategory !== 'Categoria 2'">
       <div class="grade-produtos">
         <article class="card-produto">
           <div class="imagem-produto">Imagem</div>
           <div class="informacoes-produto">
             <h3>Nome do produto</h3>
             <p>Descrição do produto.</p>
-            <strong>Preço</strong>
-            <button class="botao-adicionar" type="button">Adicionar</button>
+            <div class="acoes-produto">
+              <strong>Preço</strong>
+              <button class="botao-adicionar" type="button">Adicionar</button>
+            </div>
           </div>
         </article>
       </div>
     </section>
 
+    <section class="secao-categoria" [hidden]="selectedCategory !== 'Categoria 3'">
+      <p>Nenhum produto cadastrado nesta categoria.</p>
+    </section>
   </div>
 
   <aside class="area-pedido">
