@@ -2,3 +2,16 @@ memoria-privada/
 AGENTS.md
 out/
 *.class
+**/memoria-privada/
+.obsidian/
+.env
+.env.*
+!.env.example
+*.log
+*.sql
+*.dump
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
