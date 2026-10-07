@@ -11,6 +11,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #B89661;
+}
+
+.botao-pedido {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border:1px solid #D5C3A2;
+  border-radius: 999px;
+  background-color: #C3A06A;
+  color: #FFF9EE;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.contador{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #0E2B44;
+  color:#FFF9EE;
+  font-size: 0.85rem;
 }
 
 .marca {
@@ -26,9 +53,11 @@
 }
 
 /* Titulo principal */
-.apresentacao {
+.apresentacao h1 {
   margin: 32px 0;
   text-align: center;
+  color: #FFF9EE;
+  font-size: 3rem;
 }
 
 /* Botoes das categorias */
@@ -42,13 +71,44 @@
 .navegacao-categorias button {
   flex: 1 0 auto;
   min-width: 140px;
+  padding: 12px 28px;
+  border: 1px solid #D5C3A2;
+  border-radius: 999px;
+  background-color: #F8F1E7;
+  color: #0B1D2A;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
+.botao-categoria {
+  background-color: #F8F1E7;
+  color: #0B1D2A;
+}
 /* Lista de categorias controlada pelo Angular futuramente */
 .lista-categorias {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+/* Titulo e linha da categoria */
+.titulo-categoria {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.titulo-categoria h2 {
+  margin: 0;
+  color: #FFF9EE;
+  font-size: 2rem;
+}
+
+.linha-categoria {
+  flex: 1;
+  height: 1px;
+  background-color: #B89661;
 }
 
 /* Grade dos produtos */
@@ -63,10 +123,16 @@
   display: flex;
   flex-direction: column;
   min-height: 320px;
+  overflow: hidden;
+  background-color: #FBF7F0;
+  border: #D5C3A2;
+  border-radius: 16px;
+
 }
 
 .imagem-produto {
   min-height: 160px;
+  background-color: #D8C8AE;
 }
 
 .informacoes-produto {
@@ -75,11 +141,18 @@
   flex-direction: column;
   gap: 8px;
   padding: 16px;
+  color:#0B1D2A;
+
 }
 
-.informacoes-produto h3,
+.informacoes-produto h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
 .informacoes-produto p {
   margin: 0;
+  color: #66717B;
+  line-height: 1.5;
 }
 
 /* Preco e botao alinhados no final do card */
@@ -89,6 +162,20 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: auto;
+}
+
+.acoes-produto {
+  color: #0B1D2A;
+  font-size: 1.1rem;
+}
+
+.botao-adicionar {
+  padding: 10px 16px;
+  border: 1px solid #B89661;
+  border-radius: 999px;
+  background-color: #C3A06A;
+  color: #FFF9EE;
+  cursor: pointer
 }
 
 /* Area reservada para o pedido */
@@ -114,6 +201,9 @@
   }
 }
 /* Categoria atualmente selecionada */
-.botao-categoria.categoria-selecionada {
+.navegacao-categorias button.categoria-selecionada {
+  background-color: #0E2B44;
+  color: #FFF9EE;
+  border: 1px solid #C3A06A;
   font-weight: 700;
 }
