@@ -10,4 +10,4 @@ import { RouterOutlet } from '@angular/router';
 export class App {
   protected readonly title = signal('frontend');
   protected selectedCategory = 'Categoria 1';
-}G
+}
