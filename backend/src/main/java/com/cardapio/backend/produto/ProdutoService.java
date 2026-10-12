@@ -22,4 +22,21 @@ public class ProdutoService {
     public Produto salvar(Produto produto) {
         return produtoRepository.save(produto);
     }
+
+    public Produto atualizar(Long id, Produto dados) {
+        Produto produto = produtoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+
+        produto.setNome(dados.getNome());
+        produto.setDescricao(dados.getDescricao());
+        produto.setPreco(dados.getPreco());
+        produto.setImagem(dados.getImagem());
+        produto.setCategoria(dados.getCategoria());
+
+        return produtoRepository.save(produto);
+    }
+
+    public void excluir(Long id) {
+        produtoRepository.deleteById(id);
+    }
 }

@@ -20,4 +20,16 @@ public class CategoriaService {
         return categoriaRepository.save(categoria);
     }
 
+    public Categoria atualizar(Long id, Categoria dados) {
+        Categoria categoria = categoriaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+
+        categoria.setNome(dados.getNome());
+        return categoriaRepository.save(categoria);
+    }
+
+    public void excluir(Long id) {
+        categoriaRepository.deleteById(id);
+    }
+
 }
