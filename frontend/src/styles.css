@@ -5,9 +5,7 @@ body{
 }
 body{
     min-height: 100vh;
-    background-image: url('/imagens/fundo-pagina.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    background: #FAF8F3;
+    color: #171513;
+    font-family: 'Lora', Georgia, serif;
 }

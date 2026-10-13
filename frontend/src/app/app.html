@@ -1,11 +1,18 @@
 <main class="cardapio">
 
+  <button class="botao-admin" type="button" (click)="alternarModoAdmin()">
+    {{ modoAdmin ? 'Voltar ao cardápio' : 'Área administrativa' }}
+  </button>
+
   <header class="cabecalho">
     <div class="marca">
-      <img 
+       <img 
        class = "logo"
        src= "imagens/logo.png"
-       alt="Logo do restaurante" >
+       alt="Logo do restaurante"
+       (click)="alternarModoAdmin()"
+       role="button"
+       tabindex="0" >
     </div>
 
     <button class="botao-pedido" type="button">
@@ -14,7 +21,7 @@
     </button>
   </header>
 
-  <section class="apresentacao">
+  <section class="apresentacao" [hidden]="modoAdmin">
     <h1>Cardápio</h1>
   </section>
 
@@ -42,11 +49,56 @@
     </button>
   </nav>
 
-  <div class="lista-categorias">
+  <nav class="navegacao-categorias categorias-dinamicas" aria-label="Categorias vindas do backend" [hidden]="modoAdmin">
+    @for (categoria of categorias(); track categoria.id) {
+      <button
+        class="botao-categoria"
+        [class.categoria-selecionada]="selectedCategory === categoria.nome"
+        (click)="selectedCategory = categoria.nome"
+        type="button">
+        {{ categoria.nome }}
+      </button>
+    }
+  </nav>
+
+  <div class="lista-categorias produtos-dinamicos" [hidden]="modoAdmin">
+    @for (categoria of categorias(); track categoria.id) {
+      <section class="secao-categoria" [hidden]="selectedCategory !== categoria.nome">
+        <div class="titulo-categoria">
+          <h2>{{ categoria.nome }}</h2>
+          <span class="linha-categoria"></span>
+        </div>
+
+        <div class="grade-produtos">
+          @for (produto of produtosDaCategoria(categoria.id); track produto.id) {
+            <article class="card-produto">
+              @if (produto.imagem) {
+                <img class="imagem-produto" [src]="produto.imagem" [alt]="produto.nome">
+              } @else {
+                <div class="imagem-produto">Imagem</div>
+              }
+              <div class="informacoes-produto">
+                <h3>{{ produto.nome }}</h3>
+                <p>{{ produto.descricao }}</p>
+                <div class="acoes-produto">
+                  <strong>R$ {{ produto.preco | number:'1.2-2' }}</strong>
+                  <button class="botao-adicionar" type="button">Adicionar</button>
+                </div>
+              </div>
+            </article>
+          } @empty {
+            <p>Nenhum produto cadastrado nesta categoria.</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  <div class="lista-categorias lista-categorias-fixa" [hidden]="modoAdmin">
 
     <section class="secao-categoria" [hidden]="selectedCategory !== 'Categoria 1'">
       <div class="titulo-categoria">
-        <h2>Entradas</h2>
+        <h2>{{ categorias()[0]?.nome || 'Entradas' }}</h2>
         <span class="linha-categoria"></span>
       </div>
 
@@ -98,9 +150,121 @@
     </section>
   </div>
 
-  <aside class="area-pedido">
+    <section class="secao-categoria categoria-dinamica-vazia" [hidden]="!selectedCategory || selectedCategory === categorias()[0]?.nome">
+      <div class="titulo-categoria">
+        <h2>{{ selectedCategory }}</h2>
+        <span class="linha-categoria"></span>
+      </div>
+      <p>Nenhum produto cadastrado nesta categoria.</p>
+    </section>
+
+  <aside class="area-pedido" [hidden]="modoAdmin">
     <h2>Meu pedido</h2>
     <p>Os produtos adicionados aparecerão aqui.</p>
   </aside>
+
+  <section class="painel-admin" [hidden]="!modoAdmin">
+    <h1>Painel administrativo</h1>
+    <p>Cadastre as categorias do cardápio.</p>
+
+    <form class="formulario-admin" (ngSubmit)="cadastrarCategoria()">
+      <label for="nome-categoria">Nome da categoria</label>
+      <input
+        id="nome-categoria"
+        name="nomeCategoria"
+        type="text"
+        [(ngModel)]="novaCategoria"
+        placeholder="Ex.: Entradas"
+        required>
+      <button type="submit">Cadastrar categoria</button>
+    </form>
+
+    <h2>Categorias cadastradas</h2>
+    <ul class="lista-admin">
+      @for (categoria of categorias(); track categoria.id) {
+        <li class="item-admin">
+          @if (categoriaEmEdicao?.id === categoria.id) {
+            <input
+              [id]="'edicao-categoria-' + categoria.id"
+              [name]="'edicaoCategoria' + categoria.id"
+              type="text"
+              [(ngModel)]="nomeCategoriaEdicao">
+            <div class="acoes-admin">
+              <button type="button" (click)="salvarEdicaoCategoria()">Salvar</button>
+              <button type="button" (click)="cancelarEdicao()">Cancelar</button>
+            </div>
+          } @else {
+            <span>{{ categoria.nome }}</span>
+            <div class="acoes-admin">
+              <button type="button" (click)="iniciarEdicao(categoria)">Editar</button>
+              <button type="button" (click)="excluirCategoria(categoria)">Excluir</button>
+            </div>
+          }
+        </li>
+      } @empty {
+        <li>Nenhuma categoria cadastrada.</li>
+      }
+    </ul>
+
+    <h2>Cadastro de produto</h2>
+    <form class="formulario-admin formulario-produto" (ngSubmit)="cadastrarProduto()">
+      <label for="nome-produto">Nome do produto</label>
+      <input
+        id="nome-produto"
+        name="nomeProduto"
+        type="text"
+        [(ngModel)]="novoProduto.nome"
+        placeholder="Ex.: Guioza"
+        required>
+
+      <label for="descricao-produto">Descrição</label>
+      <textarea
+        id="descricao-produto"
+        name="descricaoProduto"
+        [(ngModel)]="novoProduto.descricao"
+        placeholder="Descreva o produto"></textarea>
+
+      <label for="preco-produto">Preço</label>
+      <input
+        id="preco-produto"
+        name="precoProduto"
+        type="number"
+        min="0"
+        step="0.01"
+        [(ngModel)]="novoProduto.preco"
+        required>
+
+      <label for="imagem-produto">Imagem (URL ou caminho)</label>
+      <input
+        id="imagem-produto"
+        name="imagemProduto"
+        type="text"
+        [(ngModel)]="novoProduto.imagem"
+        placeholder="imagens/guioza.jpg">
+
+      <label for="categoria-produto">Categoria</label>
+      <select
+        id="categoria-produto"
+        name="categoriaProduto"
+        [(ngModel)]="novoProduto.categoriaId"
+        required>
+        <option [ngValue]="0" disabled>Selecione uma categoria</option>
+        @for (categoria of categorias(); track categoria.id) {
+          <option [ngValue]="categoria.id">{{ categoria.nome }}</option>
+        }
+      </select>
+
+      <button type="submit">Cadastrar produto</button>
+    </form>
+
+    <h2>Produtos cadastrados</h2>
+    <ul class="lista-admin">
+      @for (produto of produtos(); track produto.id) {
+        <li>{{ produto.nome }} — R$ {{ produto.preco | number:'1.2-2' }} ({{ produto.categoria.nome }})</li>
+      } @empty {
+        <li>Nenhum produto cadastrado.</li>
+      }
+    </ul>
+  </section>
 
 </main>
