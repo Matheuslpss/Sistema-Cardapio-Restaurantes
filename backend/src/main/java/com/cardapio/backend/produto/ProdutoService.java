@@ -2,6 +2,8 @@
 
 package com.cardapio.backend.produto;
 
+import com.cardapio.backend.categoria.Categoria;
+import com.cardapio.backend.categoria.CategoriaRepository;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -10,9 +12,11 @@ import org.springframework.stereotype.Service;
 public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    public ProdutoService(ProdutoRepository produtoRepository) {
+    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository) {
         this.produtoRepository = produtoRepository;
+        this.categoriaRepository = categoriaRepository;
     }
 
     public List<Produto> listar() {
@@ -30,8 +34,15 @@ public class ProdutoService {
         produto.setNome(dados.getNome());
         produto.setDescricao(dados.getDescricao());
         produto.setPreco(dados.getPreco());
-        produto.setImagem(dados.getImagem());
-        produto.setCategoria(dados.getCategoria());
+        if (dados.getCategoria() != null && dados.getCategoria().getId() != null) {
+            Categoria categoria = categoriaRepository.findById(dados.getCategoria().getId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
+        }
+
+        if (dados.getImagem() != null) {
+            produto.setImagem(dados.getImagem());
+        }
 
         return produtoRepository.save(produto);
     }

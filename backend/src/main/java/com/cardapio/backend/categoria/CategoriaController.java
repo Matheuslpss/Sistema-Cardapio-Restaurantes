@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 @RestController
@@ -36,7 +38,12 @@ public class CategoriaController {
     }
 
     @DeleteMapping("/categorias/{id}")
-    public void excluir(@PathVariable Long id) {
-        categoriaService.excluir(id);
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        try {
+            categoriaService.excluir(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 }

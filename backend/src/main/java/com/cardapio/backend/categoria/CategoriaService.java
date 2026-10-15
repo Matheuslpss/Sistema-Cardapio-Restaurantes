@@ -1,5 +1,6 @@
 package com.cardapio.backend.categoria;
 
+import com.cardapio.backend.produto.ProdutoRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -7,9 +8,11 @@ import java.util.List;
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
+    private final ProdutoRepository produtoRepository;
 
-    public CategoriaService(CategoriaRepository categoriaRepository) {
+    public CategoriaService(CategoriaRepository categoriaRepository, ProdutoRepository produtoRepository) {
         this.categoriaRepository = categoriaRepository;
+        this.produtoRepository = produtoRepository;
     }
 
     public List<Categoria> listar() {
@@ -29,6 +32,10 @@ public class CategoriaService {
     }
 
     public void excluir(Long id) {
+        if (produtoRepository.existsByCategoriaId(id)) {
+            throw new IllegalStateException("Não é possível excluir uma categoria que possui produtos.");
+        }
+
         categoriaRepository.deleteById(id);
     }
 
