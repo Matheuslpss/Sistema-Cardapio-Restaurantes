@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
@@ -22,9 +21,31 @@ interface ItemPedido {
   quantidade: number;
 }
 
+type StatusPedido = 'RECEBIDO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' | 'CANCELADO';
+
+interface PedidoItem {
+  id: number;
+  produtoId: number;
+  nomeProduto: string;
+  precoUnitario: number;
+  quantidade: number;
+  subtotal: number;
+}
+
+interface Pedido {
+  id: number;
+  mesa: number;
+  cliente: string;
+  sessaoCliente: string;
+  total: number;
+  criadoEm: string;
+  status: StatusPedido;
+  itens: PedidoItem[];
+}
+
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, DecimalPipe],
+  imports: [FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -35,6 +56,16 @@ export class App {
   protected categorias = signal<Categoria[]>([]);
   protected produtos = signal<Produto[]>([]);
   protected pedido = signal<ItemPedido[]>([]);
+  protected pedidos = signal<Pedido[]>([]);
+  protected pedidosCliente = signal<Pedido[]>([]);
+  protected pedidoEnviado = signal<Pedido | null>(null);
+  protected pedidoTelaAberta = false;
+  protected telaPedidoModo: 'carrinho' | 'acompanhamento' = 'carrinho';
+  protected adminAba: 'atendente' | 'cozinha' = 'atendente';
+  protected mesaAtual = 1;
+  protected sessaoCliente = '';
+  protected nomeCliente = '';
+  protected enviandoPedido = false;
   protected novoProduto = {
     nome: '',
     descricao: '',
@@ -57,11 +88,23 @@ export class App {
     categoriaId: 0
   };
 
+  private acompanhamentoPedido: ReturnType<typeof setInterval> | null = null;
+  private atualizacaoPedidosCozinha: ReturnType<typeof setInterval> | null = null;
+
   private readonly http = inject(HttpClient);
 
   constructor() {
+    this.mesaAtual = this.obterMesaDaUrl();
+    this.sessaoCliente = this.obterSessaoCliente(this.mesaAtual);
+    this.nomeCliente = sessionStorage.getItem(`nomeClienteMesa-${this.mesaAtual}`) ?? '';
     this.carregarCategorias();
     this.carregarProdutos();
+    this.carregarHistoricoCliente();
+
+    const pedidoSalvo = Number(localStorage.getItem(`pedidoAtualIdMesa-${this.mesaAtual}`));
+    if (Number.isFinite(pedidoSalvo) && pedidoSalvo > 0) {
+      this.acompanharPedido(pedidoSalvo);
+    }
   }
 
   protected alternarModoAdmin(): void {
@@ -69,7 +112,29 @@ export class App {
 
     if (this.modoAdmin) {
       this.carregarCategorias();
+      this.carregarPedidos();
+      this.iniciarAtualizacaoPedidosCozinha();
+    } else {
+      this.pararAtualizacaoPedidosCozinha();
     }
+  }
+
+  private obterMesaDaUrl(): number {
+    const mesa = Number(new URLSearchParams(window.location.search).get('mesa'));
+    return Number.isInteger(mesa) && mesa > 0 ? mesa : 1;
+  }
+
+  private obterSessaoCliente(mesa: number): string {
+    const chave = `sessaoClienteMesa-${mesa}`;
+    const sessaoSalva = sessionStorage.getItem(chave);
+
+    if (sessaoSalva) {
+      return sessaoSalva;
+    }
+
+    const novaSessao = crypto.randomUUID();
+    sessionStorage.setItem(chave, novaSessao);
+    return novaSessao;
   }
 
   protected carregarCategorias(): void {
@@ -114,16 +179,179 @@ export class App {
     });
   }
 
+  protected abrirTelaPedido(): void {
+    this.telaPedidoModo = this.pedidoEnviado() ? 'acompanhamento' : 'carrinho';
+    this.pedidoTelaAberta = true;
+  }
+
+  protected abrirCarrinhoAtual(): void {
+    this.telaPedidoModo = 'carrinho';
+    this.pedidoTelaAberta = true;
+  }
+
+  protected abrirAcompanhamentoPedido(): void {
+    this.telaPedidoModo = this.pedidoEnviado() ? 'acompanhamento' : 'carrinho';
+    this.pedidoTelaAberta = true;
+  }
+
+  protected pedidoEmAcompanhamento(): Pedido | null {
+    return this.telaPedidoModo === 'acompanhamento' ? this.pedidoEnviado() : null;
+  }
+
+  protected fecharTelaPedido(): void {
+    this.pedidoTelaAberta = false;
+  }
+
+  protected iniciarNovoPedido(): void {
+    this.pararAcompanhamentoPedido();
+    this.pedido.set([]);
+    this.telaPedidoModo = 'carrinho';
+    this.pedidoTelaAberta = false;
+  }
+
+  protected enviarPedido(): void {
+    const itens = this.pedido();
+    const cliente = this.nomeCliente.trim();
+
+    if (itens.length === 0) {
+      return;
+    }
+
+    if (!cliente) {
+      alert('Informe seu nome ou número da mesa para enviar o pedido.');
+      return;
+    }
+
+    this.enviandoPedido = true;
+    this.http.post<Pedido>('http://localhost:8080/pedidos', {
+      mesa: this.mesaAtual,
+      cliente,
+      sessaoCliente: this.sessaoCliente,
+      itens: itens.map((item) => ({
+        produtoId: item.produto.id,
+        quantidade: item.quantidade
+      }))
+    }).subscribe({
+      next: (pedido) => {
+        this.pedidoEnviado.set(pedido);
+        this.telaPedidoModo = 'acompanhamento';
+        localStorage.setItem(`pedidoAtualIdMesa-${this.mesaAtual}`, String(pedido.id));
+        sessionStorage.setItem(`nomeClienteMesa-${this.mesaAtual}`, cliente);
+        this.pedidosCliente.update((pedidos) => [pedido, ...pedidos.filter((item) => item.id !== pedido.id)]);
+        this.pedido.set([]);
+        this.enviandoPedido = false;
+        this.acompanharPedido(pedido.id);
+      },
+      error: (erro) => {
+        this.enviandoPedido = false;
+        console.error('Não foi possível enviar o pedido', erro);
+        alert('Não foi possível enviar o pedido. Verifique se o servidor está funcionando.');
+      }
+    });
+  }
+
+  protected carregarPedidos(): void {
+    this.http.get<Pedido[]>('http://localhost:8080/pedidos').subscribe({
+      next: (pedidos) => this.pedidos.set(pedidos),
+      error: (erro) => console.error('Não foi possível carregar os pedidos', erro)
+    });
+  }
+
+  protected carregarHistoricoCliente(): void {
+    this.http.get<Pedido[]>(`http://localhost:8080/pedidos/sessao/${encodeURIComponent(this.sessaoCliente)}`).subscribe({
+      next: (pedidos) => {
+        this.pedidosCliente.set(pedidos);
+
+        if (!this.pedidoEnviado() && pedidos.length > 0) {
+          this.pedidoEnviado.set(pedidos[0]);
+        }
+      },
+      error: (erro) => console.error('NÃ£o foi possÃ­vel carregar o histÃ³rico de pedidos', erro)
+    });
+  }
+
+  private iniciarAtualizacaoPedidosCozinha(): void {
+    this.pararAtualizacaoPedidosCozinha();
+    this.atualizacaoPedidosCozinha = setInterval(() => this.carregarPedidos(), 5000);
+  }
+
+  private pararAtualizacaoPedidosCozinha(): void {
+    if (this.atualizacaoPedidosCozinha !== null) {
+      clearInterval(this.atualizacaoPedidosCozinha);
+      this.atualizacaoPedidosCozinha = null;
+    }
+  }
+
+  protected acompanharPedido(id: number): void {
+    this.pararAcompanhamentoPedido();
+    this.atualizarPedidoAcompanhado(id);
+    this.acompanhamentoPedido = setInterval(() => this.atualizarPedidoAcompanhado(id), 5000);
+  }
+
+  private atualizarPedidoAcompanhado(id: number): void {
+    this.http.get<Pedido>(`http://localhost:8080/pedidos/${id}`).subscribe({
+      next: (pedido) => {
+        this.pedidoEnviado.set(pedido);
+        this.pedidosCliente.update((pedidos) => pedidos.map((item) =>
+          item.id === pedido.id ? pedido : item
+        ));
+
+        if (pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO') {
+          this.pararAcompanhamentoPedido();
+        }
+      },
+      error: (erro) => console.error('Não foi possível atualizar o pedido', erro)
+    });
+  }
+
+  private pararAcompanhamentoPedido(): void {
+    if (this.acompanhamentoPedido !== null) {
+      clearInterval(this.acompanhamentoPedido);
+      this.acompanhamentoPedido = null;
+    }
+  }
+
+  protected alterarStatusPedido(pedido: Pedido, status: StatusPedido): void {
+    this.http.put<Pedido>(`http://localhost:8080/pedidos/${pedido.id}/status`, { status }).subscribe({
+      next: (pedidoAtualizado) => {
+        this.pedidos.update((pedidos) => pedidos.map((item) =>
+          item.id === pedidoAtualizado.id ? pedidoAtualizado : item
+        ));
+
+        this.pedidosCliente.update((pedidos) => pedidos.map((item) =>
+          item.id === pedidoAtualizado.id ? pedidoAtualizado : item
+        ));
+
+        if (this.pedidoEnviado()?.id === pedidoAtualizado.id) {
+          this.pedidoEnviado.set(pedidoAtualizado);
+        }
+      },
+      error: (erro) => {
+        console.error('Não foi possível atualizar o status do pedido', erro);
+        alert('Não foi possível atualizar o status do pedido.');
+        this.carregarPedidos();
+      }
+    });
+  }
+
+  protected textoStatus(status: StatusPedido): string {
+    const textos: Record<StatusPedido, string> = {
+      RECEBIDO: 'Recebido',
+      EM_PREPARO: 'Em preparo',
+      PRONTO: 'Pronto',
+      ENTREGUE: 'Entregue',
+      CANCELADO: 'Cancelado'
+    };
+
+    return textos[status];
+  }
+
   protected diminuirQuantidade(produto: Produto): void {
     this.pedido.update((itens) => itens
       .map((item) => item.produto.id === produto.id
         ? { ...item, quantidade: item.quantidade - 1 }
         : item)
       .filter((item) => item.quantidade > 0));
-  }
-
-  protected removerDoPedido(produto: Produto): void {
-    this.pedido.update((itens) => itens.filter((item) => item.produto.id !== produto.id));
   }
 
   protected quantidadePedido(): number {

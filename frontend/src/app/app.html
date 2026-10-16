@@ -11,9 +11,20 @@
        tabindex="0" >
     </div>
 
-    <button class="botao-pedido" type="button">
+    <span class="mesa-atual">Mesa {{ mesaAtual }}</span>
+
+    <button
+      class="botao-pedido"
+      type="button"
+      (click)="abrirAcompanhamentoPedido()"
+      [attr.aria-expanded]="pedidoTelaAberta"
+      aria-controls="painel-pedido">
       Ver meu pedido
-      <span class="contador">{{ quantidadePedido() }}</span>
+      @if (pedidoEnviado(); as pedidoAtual) {
+        <span class="contador">#{{ pedidoAtual.id }}</span>
+      } @else {
+        <span class="contador">{{ quantidadePedido() }}</span>
+      }
     </button>
   </header>
 
@@ -66,30 +77,120 @@
     }
   </div>
 
-  <aside class="area-pedido" [hidden]="modoAdmin">
-    <h2>Meu pedido</h2>
-    @if (pedido().length === 0) {
-      <p>Nenhum produto adicionado.</p>
-    } @else {
-      <div class="resumo-pedido">
-        @for (item of pedido(); track item.produto.id) {
-          <div class="item-pedido">
-            <span>{{ item.quantidade }}x {{ item.produto.nome }}</span>
-            <div class="controles-pedido">
-              <button type="button" (click)="diminuirQuantidade(item.produto)">−</button>
-              <button type="button" (click)="removerDoPedido(item.produto)">Remover</button>
+  @if (pedido().length > 0 && !modoAdmin && !pedidoTelaAberta) {
+    <button class="barra-pedido" type="button" (click)="abrirCarrinhoAtual()">
+      <span>Fazer pedido</span>
+      <span class="separador-pedido">•</span>
+      <strong>R$ {{ precoFormatado(totalPedido()) }}</strong>
+      <span class="seta-pedido" aria-hidden="true">→</span>
+    </button>
+  }
+
+  @if (pedidoTelaAberta && !modoAdmin) {
+    <section class="tela-pedido" aria-label="Meu pedido">
+      <div class="conteudo-tela-pedido">
+        <div class="cabecalho-tela-pedido">
+          <div>
+            <h2>Meu pedido</h2>
+            <p>Confira os produtos antes de finalizar.</p>
+          </div>
+          <button class="fechar-tela-pedido" type="button" (click)="fecharTelaPedido()" aria-label="Voltar ao cardápio">×</button>
+        </div>
+
+        @if (pedidoEmAcompanhamento(); as pedidoAtual) {
+          <div class="status-pedido">
+            <span class="numero-pedido">Pedido #{{ pedidoAtual.id }}</span>
+            <h3>{{ textoStatus(pedidoAtual.status) }}</h3>
+            <p>Pedido de {{ pedidoAtual.cliente }} recebido pela cozinha.</p>
+            <div class="etapas-pedido" aria-label="Etapas do pedido">
+              <span [class.etapa-ativa]="pedidoAtual.status === 'RECEBIDO'">Recebido</span>
+              <span [class.etapa-ativa]="pedidoAtual.status === 'EM_PREPARO'">Em preparo</span>
+              <span [class.etapa-ativa]="pedidoAtual.status === 'PRONTO'">Pronto</span>
+              <span [class.etapa-ativa]="pedidoAtual.status === 'ENTREGUE'">Entregue</span>
+            </div>
+            @if (pedidoAtual.status === 'CANCELADO') {
+              <p class="pedido-cancelado">Este pedido foi cancelado pela cozinha.</p>
+            }
+            <p class="pedido-atualizacao">A situação é atualizada automaticamente.</p>
+            <div class="resumo-pedido-enviado">
+              <h3>Itens do pedido</h3>
+              @for (item of pedidoAtual.itens; track item.id) {
+                <div class="item-pedido-enviado">
+                  <span>{{ item.quantidade }}x {{ item.nomeProduto }}</span>
+                  <strong>R$ {{ precoFormatado(item.subtotal) }}</strong>
+                </div>
+              }
+              <div class="total-pedido-enviado">
+                <span>Total</span>
+                <strong>R$ {{ precoFormatado(pedidoAtual.total) }}</strong>
+              </div>
+            </div>
+            <div class="historico-pedidos-cliente">
+              <h3>Meus pedidos</h3>
+              @for (pedidoHistorico of pedidosCliente(); track pedidoHistorico.id) {
+                <div class="pedido-historico-cliente">
+                  <span>Pedido #{{ pedidoHistorico.id }} · {{ textoStatus(pedidoHistorico.status) }}</span>
+                  <strong>R$ {{ precoFormatado(pedidoHistorico.total) }}</strong>
+                </div>
+              }
+            </div>
+            <button class="botao-novo-pedido" type="button" (click)="iniciarNovoPedido()">
+              Fazer outro pedido
+            </button>
+          </div>
+        } @else if (pedido().length === 0) {
+          <p class="pedido-vazio">Nenhum produto adicionado.</p>
+        } @else {
+          <div class="lista-pedido-completa">
+            @for (item of pedido(); track item.produto.id) {
+              <div class="item-pedido-completo">
+                <div>
+                  <strong>{{ item.produto.nome }}</strong>
+                  <span>R$ {{ precoFormatado(item.produto.preco) }} cada</span>
+                </div>
+                <div class="controles-pedido">
+                  <button type="button" (click)="adicionarAoPedido(item.produto)" aria-label="Adicionar mais">+</button>
+                  <span>{{ item.quantidade }}</span>
+                  <button type="button" (click)="diminuirQuantidade(item.produto)" aria-label="Diminuir quantidade">−</button>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="rodape-tela-pedido">
+            <strong>Total: R$ {{ precoFormatado(totalPedido()) }}</strong>
+            <div class="formulario-envio-pedido">
+              <label for="nome-cliente">Nome ou mesa</label>
+              <input
+                id="nome-cliente"
+                name="nomeCliente"
+                type="text"
+                [(ngModel)]="nomeCliente"
+                placeholder="Ex.: Mesa 4"
+                autocomplete="name">
+              <button type="button" (click)="enviarPedido()" [disabled]="enviandoPedido">
+                {{ enviandoPedido ? 'Enviando...' : 'Fazer pedido' }}
+              </button>
             </div>
           </div>
         }
-        <strong class="total-pedido">Total: R$ {{ totalPedido() | number:'1.2-2' }}</strong>
       </div>
-    }
-  </aside>
+    </section>
+  }
 
   <section class="painel-admin" [hidden]="!modoAdmin">
     <h1>Painel administrativo</h1>
     <p>Cadastre as categorias do cardápio.</p>
 
+    <nav class="navegacao-admin" aria-label="Areas administrativas">
+      <button type="button" [class.aba-admin-ativa]="adminAba === 'atendente'" (click)="adminAba = 'atendente'">
+        Atendente
+      </button>
+      <button type="button" [class.aba-admin-ativa]="adminAba === 'cozinha'" (click)="adminAba = 'cozinha'">
+        Cozinha <span class="contador-pedidos-admin">{{ pedidos().length }}</span>
+      </button>
+    </nav>
+
+    <section class="admin-atendente" [hidden]="adminAba !== 'atendente'">
     <form class="formulario-admin" (ngSubmit)="cadastrarCategoria()">
       <label for="nome-categoria">Nome da categoria</label>
       <input
@@ -266,6 +367,46 @@
         <p>Nenhuma categoria cadastrada.</p>
       }
     </div>
+
+    </section>
+
+    <section class="painel-pedidos-admin" [hidden]="adminAba !== 'cozinha'">
+      <h2>Pedidos da cozinha</h2>
+      <p>Acompanhe os pedidos recebidos e atualize a situação deles.</p>
+
+      @if (pedidos().length === 0) {
+        <p class="pedido-admin-vazio">Nenhum pedido recebido ainda.</p>
+      } @else {
+        <div class="lista-pedidos-admin">
+          @for (pedido of pedidos(); track pedido.id) {
+            <article class="pedido-admin">
+              <div class="mesa-pedido-admin">Mesa {{ pedido.mesa }}</div>
+              <div class="cabecalho-pedido-admin">
+                <div>
+                  <h3>Pedido #{{ pedido.id }} · {{ pedido.cliente }}</h3>
+                  <span>{{ textoStatus(pedido.status) }} · R$ {{ precoFormatado(pedido.total) }}</span>
+                </div>
+                <select
+                  [name]="'statusPedido' + pedido.id"
+                  [ngModel]="pedido.status"
+                  (ngModelChange)="alterarStatusPedido(pedido, $event)">
+                  <option value="RECEBIDO">Recebido</option>
+                  <option value="EM_PREPARO">Em preparo</option>
+                  <option value="PRONTO">Pronto</option>
+                  <option value="ENTREGUE">Entregue</option>
+                  <option value="CANCELADO">Cancelado</option>
+                </select>
+              </div>
+              <div class="itens-pedido-admin">
+                @for (item of pedido.itens; track item.id) {
+                  <span>{{ item.quantidade }}x {{ item.nomeProduto }}</span>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
 
   </section>
 
